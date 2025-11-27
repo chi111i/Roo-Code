@@ -1,8 +1,9 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react"
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { convertHeadersToObject } from "./utils/headers"
 import { useDebounce } from "react-use"
 import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 import { ExternalLinkIcon } from "@radix-ui/react-icons"
+import { ChevronsUpDown, Check, X } from "lucide-react"
 
 import {
 	type ProviderName,
@@ -54,6 +55,8 @@ import {
 	OPENROUTER_DEFAULT_PROVIDER_NAME,
 } from "@src/components/ui/hooks/useOpenRouterModelProviders"
 import { filterProviders, filterModels } from "./utils/organizationFilters"
+import { cn } from "@src/lib/utils"
+import { useEscapeKey } from "@src/hooks/useEscapeKey"
 import {
 	Select,
 	SelectTrigger,
@@ -64,6 +67,16 @@ import {
 	Collapsible,
 	CollapsibleTrigger,
 	CollapsibleContent,
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+	Button,
 } from "@src/components/ui"
 
 import {
@@ -177,6 +190,11 @@ const ApiOptions = ({
 
 	const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
 	const [isAdvancedSettingsOpen, setIsAdvancedSettingsOpen] = useState(false)
+	const [modelPickerOpen, setModelPickerOpen] = useState(false)
+	const [modelSearchValue, setModelSearchValue] = useState("")
+	const searchInputRef = useRef<HTMLInputElement>(null)
+	const selectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+	const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
 	const handleInputChange = useCallback(
 		<K extends keyof ProviderSettings, E>(
@@ -273,6 +291,21 @@ const ApiOptions = ({
 		)
 		setErrorMessage(apiValidationResult)
 	}, [apiConfiguration, routerModels, organizationAllowList, setErrorMessage])
+
+	// Use the shared ESC key handler hook for model picker
+	useEscapeKey(modelPickerOpen, () => setModelPickerOpen(false))
+
+	// Cleanup timeouts on unmount to prevent memory leaks
+	useEffect(() => {
+		return () => {
+			if (selectTimeoutRef.current) {
+				clearTimeout(selectTimeoutRef.current)
+			}
+			if (closeTimeoutRef.current) {
+				clearTimeout(closeTimeoutRef.current)
+			}
+		}
+	}, [])
 
 	const selectedProviderModels = useMemo(() => {
 		const models = MODELS_BY_PROVIDER[selectedProvider]
@@ -744,36 +777,161 @@ const ApiOptions = ({
 				<>
 					<div>
 						<label className="block font-medium mb-1">{t("settings:providers.model")}</label>
-						<Select
-							value={selectedModelId === "custom-arn" ? "custom-arn" : selectedModelId}
-							onValueChange={(value) => {
-								setApiConfigurationField("apiModelId", value)
-
-								// Clear custom ARN if not using custom ARN option.
-								if (value !== "custom-arn" && selectedProvider === "bedrock") {
-									setApiConfigurationField("awsCustomArn", "")
-								}
-
-								// Clear reasoning effort when switching models to allow the new model's default to take effect
-								// This is especially important for GPT-5 models which default to "medium"
-								if (selectedProvider === "openai-native") {
-									setApiConfigurationField("reasoningEffort", undefined)
+						<Popover
+							open={modelPickerOpen}
+							onOpenChange={(open) => {
+								setModelPickerOpen(open)
+								// Clear the search value when closing
+								if (!open) {
+									if (closeTimeoutRef.current) {
+										clearTimeout(closeTimeoutRef.current)
+									}
+									closeTimeoutRef.current = setTimeout(() => setModelSearchValue(""), 100)
 								}
 							}}>
-							<SelectTrigger className="w-full">
-								<SelectValue placeholder={t("settings:common.select")} />
-							</SelectTrigger>
-							<SelectContent>
-								{selectedProviderModels.map((option) => (
-									<SelectItem key={option.value} value={option.value}>
-										{option.label}
-									</SelectItem>
-								))}
-								{selectedProvider === "bedrock" && (
-									<SelectItem value="custom-arn">{t("settings:labels.useCustomArn")}</SelectItem>
-								)}
-							</SelectContent>
-						</Select>
+							<PopoverTrigger asChild>
+								<Button
+									variant="combobox"
+									role="combobox"
+									aria-expanded={modelPickerOpen}
+									className="w-full justify-between"
+									data-testid="model-picker-button">
+									<div className="truncate">
+										{selectedModelId === "custom-arn"
+											? t("settings:labels.useCustomArn")
+											: (selectedModelId ?? t("settings:common.select"))}
+									</div>
+									<ChevronsUpDown className="opacity-50" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]">
+								<Command>
+									<div className="relative">
+										<CommandInput
+											ref={searchInputRef}
+											value={modelSearchValue}
+											onValueChange={setModelSearchValue}
+											placeholder={t("settings:modelPicker.searchPlaceholder")}
+											className="h-9 mr-4"
+											data-testid="model-input"
+										/>
+										{modelSearchValue.length > 0 && (
+											<div className="absolute right-2 top-0 bottom-0 flex items-center justify-center">
+												<X
+													className="text-vscode-input-foreground opacity-50 hover:opacity-100 size-4 p-0.5 cursor-pointer"
+													onClick={() => {
+														setModelSearchValue("")
+														searchInputRef.current?.focus()
+													}}
+												/>
+											</div>
+										)}
+									</div>
+									<CommandList>
+										<CommandEmpty>
+											{modelSearchValue && (
+												<div className="py-2 px-1 text-sm">
+													{t("settings:modelPicker.noMatchFound")}
+												</div>
+											)}
+										</CommandEmpty>
+										<CommandGroup>
+											{selectedProviderModels.map((option) => (
+												<CommandItem
+													key={option.value}
+													value={option.value}
+													onSelect={(value) => {
+														setApiConfigurationField("apiModelId", value)
+
+														// Clear custom ARN if not using custom ARN option.
+														if (value !== "custom-arn" && selectedProvider === "bedrock") {
+															setApiConfigurationField("awsCustomArn", "")
+														}
+
+														// Clear reasoning effort when switching models
+														if (selectedProvider === "openai-native") {
+															setApiConfigurationField("reasoningEffort", undefined)
+														}
+
+														setModelPickerOpen(false)
+														if (selectTimeoutRef.current) {
+															clearTimeout(selectTimeoutRef.current)
+														}
+														selectTimeoutRef.current = setTimeout(
+															() => setModelSearchValue(""),
+															100,
+														)
+													}}
+													data-testid={`model-option-${option.value}`}>
+													<span className="truncate" title={option.label}>
+														{option.label}
+													</span>
+													<Check
+														className={cn(
+															"size-4 p-0.5 ml-auto",
+															option.value === selectedModelId
+																? "opacity-100"
+																: "opacity-0",
+														)}
+													/>
+												</CommandItem>
+											))}
+											{selectedProvider === "bedrock" && (
+												<CommandItem
+													value="custom-arn"
+													onSelect={(value) => {
+														setApiConfigurationField("apiModelId", value)
+														setModelPickerOpen(false)
+														if (selectTimeoutRef.current) {
+															clearTimeout(selectTimeoutRef.current)
+														}
+														selectTimeoutRef.current = setTimeout(
+															() => setModelSearchValue(""),
+															100,
+														)
+													}}>
+													<span className="truncate">
+														{t("settings:labels.useCustomArn")}
+													</span>
+													<Check
+														className={cn(
+															"size-4 p-0.5 ml-auto",
+															selectedModelId === "custom-arn"
+																? "opacity-100"
+																: "opacity-0",
+														)}
+													/>
+												</CommandItem>
+											)}
+										</CommandGroup>
+									</CommandList>
+									{modelSearchValue &&
+										!selectedProviderModels.some((m) => m.value === modelSearchValue) &&
+										modelSearchValue !== "custom-arn" && (
+											<div className="p-1 border-t border-vscode-input-border">
+												<CommandItem
+													data-testid="use-custom-model"
+													value={modelSearchValue}
+													onSelect={(value) => {
+														setApiConfigurationField("apiModelId", value)
+														setModelPickerOpen(false)
+														if (selectTimeoutRef.current) {
+															clearTimeout(selectTimeoutRef.current)
+														}
+														selectTimeoutRef.current = setTimeout(
+															() => setModelSearchValue(""),
+															100,
+														)
+													}}>
+													{t("settings:modelPicker.useCustomModel", {
+														modelId: modelSearchValue,
+													})}
+												</CommandItem>
+											</div>
+										)}
+								</Command>
+							</PopoverContent>
+						</Popover>
 					</div>
 
 					{/* Show error if a deprecated model is selected */}
