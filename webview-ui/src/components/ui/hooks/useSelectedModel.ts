@@ -51,6 +51,18 @@ function getValidatedModelId(
 	return configuredId && availableModels?.[configuredId] ? configuredId : defaultModelId
 }
 
+/**
+ * Helper to get model info with customModelInfo as fallback for static providers.
+ * Returns the predefined model info if available, otherwise falls back to customModelInfo.
+ * This ensures custom model IDs not in predefined lists can still have proper model configuration.
+ */
+function getModelInfoWithCustomFallback(
+	predefinedInfo: ModelInfo | undefined,
+	customModelInfo: ModelInfo | null | undefined,
+): ModelInfo | undefined {
+	return predefinedInfo ?? customModelInfo ?? undefined
+}
+
 export const useSelectedModel = (apiConfiguration?: ProviderSettings) => {
 	const provider = apiConfiguration?.apiProvider || "anthropic"
 	const openRouterModelId = provider === "openrouter" ? apiConfiguration?.openRouterModelId : undefined
@@ -175,14 +187,12 @@ function getSelectedModel({
 		case "xai": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = xaiModels[id as keyof typeof xaiModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "groq": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = groqModels[id as keyof typeof groqModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "huggingface": {
 			const id = apiConfiguration.huggingFaceModelId ?? "meta-llama/Llama-3.3-70B-Instruct"
@@ -202,8 +212,7 @@ function getSelectedModel({
 		case "baseten": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = basetenModels[id as keyof typeof basetenModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "bedrock": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
@@ -227,44 +236,37 @@ function getSelectedModel({
 				return { id, info }
 			}
 
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: baseInfo ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(baseInfo, apiConfiguration.customModelInfo) }
 		}
 		case "vertex": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = vertexModels[id as keyof typeof vertexModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "gemini": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = geminiModels[id as keyof typeof geminiModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "deepseek": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = deepSeekModels[id as keyof typeof deepSeekModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "doubao": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = doubaoModels[id as keyof typeof doubaoModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "moonshot": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = moonshotModels[id as keyof typeof moonshotModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "minimax": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = minimaxModels[id as keyof typeof minimaxModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "zai": {
 			const isChina = apiConfiguration.zaiApiLine === "china_coding"
@@ -272,20 +274,17 @@ function getSelectedModel({
 			const defaultModelId = getProviderDefaultModelId(provider, { isChina })
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = models[id as keyof typeof models]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "openai-native": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = openAiNativeModels[id as keyof typeof openAiNativeModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "mistral": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = mistralModels[id as keyof typeof mistralModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "openai": {
 			const id = apiConfiguration.openAiModelId ?? ""
@@ -333,33 +332,28 @@ function getSelectedModel({
 			// Claude Code models extend anthropic models but with images and prompt caching disabled
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = claudeCodeModels[id as keyof typeof claudeCodeModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			const baseInfo = info ?? apiConfiguration.customModelInfo
+			const baseInfo = getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo)
 			return { id, info: baseInfo ? { ...openAiModelInfoSaneDefaults, ...baseInfo } : undefined }
 		}
 		case "cerebras": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = cerebrasModels[id as keyof typeof cerebrasModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "sambanova": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = sambaNovaModels[id as keyof typeof sambaNovaModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "fireworks": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = fireworksModels[id as keyof typeof fireworksModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "featherless": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = featherlessModels[id as keyof typeof featherlessModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "io-intelligence": {
 			const id = getValidatedModelId(
@@ -379,8 +373,7 @@ function getSelectedModel({
 		case "qwen-code": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = qwenCodeModels[id as keyof typeof qwenCodeModels]
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: info ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "vercel-ai-gateway": {
 			const id = getValidatedModelId(
@@ -431,8 +424,7 @@ function getSelectedModel({
 				}
 			}
 
-			// Use customModelInfo as fallback for custom model IDs not in predefined list
-			return { id, info: baseInfo ?? apiConfiguration.customModelInfo ?? undefined }
+			return { id, info: getModelInfoWithCustomFallback(baseInfo, apiConfiguration.customModelInfo) }
 		}
 	}
 }
