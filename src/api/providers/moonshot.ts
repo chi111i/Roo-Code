@@ -21,8 +21,31 @@ export class MoonshotHandler extends OpenAiHandler {
 	}
 
 	override getModel() {
-		const id = this.options.apiModelId ?? moonshotDefaultModelId
-		const info = moonshotModels[id as keyof typeof moonshotModels] || moonshotModels[moonshotDefaultModelId]
+		const modelId = this.options.apiModelId ?? moonshotDefaultModelId
+
+		// Check if this is a known model or a custom model
+		const isKnownModel = modelId in moonshotModels
+		const id = modelId
+		let info
+
+		if (isKnownModel) {
+			info = moonshotModels[modelId as keyof typeof moonshotModels]
+		} else if (this.options.customModelInfo) {
+			info = {
+				...this.options.customModelInfo,
+				contextWindow: this.options.customModelInfo.contextWindow || 128000,
+				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? true,
+			}
+		} else {
+			// Custom model ID without customModelInfo - use sensible defaults
+			info = {
+				maxTokens: 8192,
+				contextWindow: 128000,
+				supportsPromptCache: true,
+				supportsImages: true,
+			}
+		}
+
 		const params = getModelParams({ format: "openai", modelId: id, model: info, settings: this.options })
 		return { id, info, ...params }
 	}

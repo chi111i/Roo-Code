@@ -178,15 +178,26 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 		// Check if this is a known model or a custom model
 		const isKnownModel = modelId in mistralModels
 		const id = modelId
-		let info = isKnownModel
-			? mistralModels[modelId as MistralModelId]
-			: this.options.customModelInfo
-				? {
-						...this.options.customModelInfo,
-						contextWindow: this.options.customModelInfo.contextWindow || 128000,
-						supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? false,
-					}
-				: mistralModels[mistralDefaultModelId]
+		let info
+
+		if (isKnownModel) {
+			info = mistralModels[modelId as MistralModelId]
+		} else if (this.options.customModelInfo) {
+			info = {
+				...this.options.customModelInfo,
+				contextWindow: this.options.customModelInfo.contextWindow || 128000,
+				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? false,
+			}
+		} else {
+			// Custom model ID without customModelInfo - use sensible defaults
+			info = {
+				maxTokens: DEFAULT_MAX_TOKENS,
+				contextWindow: 128000,
+				supportsPromptCache: false,
+				supportsImages: true,
+				supportsNativeTools: true,
+			}
+		}
 
 		// @TODO: Move this to the `getModelParams` function.
 		const maxTokens = this.options.includeMaxTokens ? info.maxTokens : undefined
