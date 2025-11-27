@@ -548,4 +548,128 @@ describe("useSelectedModel", () => {
 			expect(result.current.info?.contextWindow).toBe(200_000)
 		})
 	})
+
+	describe("custom model configuration", () => {
+		beforeEach(() => {
+			mockUseRouterModels.mockReturnValue({
+				data: {
+					openrouter: {},
+					requesty: {},
+					glama: {},
+					unbound: {},
+					litellm: {},
+					"io-intelligence": {},
+				},
+				isLoading: false,
+				isError: false,
+			} as any)
+
+			mockUseOpenRouterModelProviders.mockReturnValue({
+				data: {},
+				isLoading: false,
+				isError: false,
+			} as any)
+		})
+
+		it("should use customModelInfo for custom anthropic model not in predefined list", () => {
+			const customModelInfo: ModelInfo = {
+				maxTokens: 8192,
+				contextWindow: 64000,
+				supportsImages: true,
+				supportsPromptCache: true,
+				inputPrice: 2.5,
+				outputPrice: 10.0,
+			}
+
+			const apiConfiguration: ProviderSettings = {
+				apiProvider: "anthropic",
+				apiModelId: "my-custom-claude-model",
+				customModelInfo,
+			}
+
+			const wrapper = createWrapper()
+			const { result } = renderHook(() => useSelectedModel(apiConfiguration), { wrapper })
+
+			expect(result.current.id).toBe("my-custom-claude-model")
+			expect(result.current.info).toEqual(customModelInfo)
+		})
+
+		it("should use customModelInfo for custom bedrock model not in predefined list", () => {
+			const customModelInfo: ModelInfo = {
+				maxTokens: 4096,
+				contextWindow: 32000,
+				supportsImages: false,
+				supportsPromptCache: false,
+			}
+
+			const apiConfiguration: ProviderSettings = {
+				apiProvider: "bedrock",
+				apiModelId: "custom-bedrock-model-id",
+				customModelInfo,
+			}
+
+			const wrapper = createWrapper()
+			const { result } = renderHook(() => useSelectedModel(apiConfiguration), { wrapper })
+
+			expect(result.current.id).toBe("custom-bedrock-model-id")
+			expect(result.current.info).toEqual(customModelInfo)
+		})
+
+		it("should use customModelInfo for custom deepseek model not in predefined list", () => {
+			const customModelInfo: ModelInfo = {
+				maxTokens: 16384,
+				contextWindow: 128000,
+				supportsImages: false,
+				supportsPromptCache: true,
+			}
+
+			const apiConfiguration: ProviderSettings = {
+				apiProvider: "deepseek",
+				apiModelId: "deepseek-custom-v3",
+				customModelInfo,
+			}
+
+			const wrapper = createWrapper()
+			const { result } = renderHook(() => useSelectedModel(apiConfiguration), { wrapper })
+
+			expect(result.current.id).toBe("deepseek-custom-v3")
+			expect(result.current.info).toEqual(customModelInfo)
+		})
+
+		it("should prefer predefined model info over customModelInfo when model exists in list", () => {
+			const customModelInfo: ModelInfo = {
+				maxTokens: 1000,
+				contextWindow: 1000,
+				supportsImages: false,
+				supportsPromptCache: false,
+			}
+
+			const apiConfiguration: ProviderSettings = {
+				apiProvider: "anthropic",
+				apiModelId: "claude-sonnet-4-5", // This is a predefined model
+				customModelInfo,
+			}
+
+			const wrapper = createWrapper()
+			const { result } = renderHook(() => useSelectedModel(apiConfiguration), { wrapper })
+
+			expect(result.current.id).toBe("claude-sonnet-4-5")
+			// Should use predefined info, not customModelInfo
+			expect(result.current.info?.maxTokens).not.toBe(1000)
+			expect(result.current.info?.contextWindow).not.toBe(1000)
+		})
+
+		it("should return undefined info when no customModelInfo provided for unknown model", () => {
+			const apiConfiguration: ProviderSettings = {
+				apiProvider: "anthropic",
+				apiModelId: "unknown-model-without-custom-info",
+			}
+
+			const wrapper = createWrapper()
+			const { result } = renderHook(() => useSelectedModel(apiConfiguration), { wrapper })
+
+			expect(result.current.id).toBe("unknown-model-without-custom-info")
+			expect(result.current.info).toBeUndefined()
+		})
+	})
 })
