@@ -41,14 +41,22 @@ import { useOllamaModels } from "./useOllamaModels"
 
 /**
  * Helper to get a validated model ID for dynamic providers.
- * Returns the configured model ID if it exists in the available models, otherwise returns the default.
+ * Returns the configured model ID if it's set (even if not in available models - for custom models),
+ * otherwise returns the default model ID.
+ * Note: Custom models may not be in the available models list, so we should not
+ * fall back to default if a model ID is explicitly configured.
  */
 function getValidatedModelId(
 	configuredId: string | undefined,
-	availableModels: ModelRecord | undefined,
+	_availableModels: ModelRecord | undefined,
 	defaultModelId: string,
 ): string {
-	return configuredId && availableModels?.[configuredId] ? configuredId : defaultModelId
+	// If a model ID is explicitly configured, use it (supports custom models)
+	if (configuredId) {
+		return configuredId
+	}
+	// Fall back to default only if no model is configured
+	return defaultModelId
 }
 
 /**
@@ -162,27 +170,28 @@ function getSelectedModel({
 					: openRouterModelProviders[specificProvider]
 			}
 
-			return { id, info }
+			// For custom models, fall back to customModelInfo
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "requesty": {
 			const id = getValidatedModelId(apiConfiguration.requestyModelId, routerModels.requesty, defaultModelId)
 			const info = routerModels.requesty?.[id]
-			return { id, info }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "glama": {
 			const id = getValidatedModelId(apiConfiguration.glamaModelId, routerModels.glama, defaultModelId)
 			const info = routerModels.glama?.[id]
-			return { id, info }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "unbound": {
 			const id = getValidatedModelId(apiConfiguration.unboundModelId, routerModels.unbound, defaultModelId)
 			const info = routerModels.unbound?.[id]
-			return { id, info }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "litellm": {
 			const id = getValidatedModelId(apiConfiguration.litellmModelId, routerModels.litellm, defaultModelId)
 			const info = routerModels.litellm?.[id]
-			return { id, info }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "xai": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
@@ -207,7 +216,7 @@ function getSelectedModel({
 		case "chutes": {
 			const id = getValidatedModelId(apiConfiguration.apiModelId, routerModels.chutes, defaultModelId)
 			const info = routerModels.chutes?.[id]
-			return { id, info }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "baseten": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
@@ -318,7 +327,7 @@ function getSelectedModel({
 		case "deepinfra": {
 			const id = getValidatedModelId(apiConfiguration.deepInfraModelId, routerModels.deepinfra, defaultModelId)
 			const info = routerModels.deepinfra?.[id]
-			return { id, info }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "vscode-lm": {
 			const id = apiConfiguration?.vsCodeLmModelSelector
@@ -363,12 +372,12 @@ function getSelectedModel({
 			)
 			const info =
 				routerModels["io-intelligence"]?.[id] ?? ioIntelligenceModels[id as keyof typeof ioIntelligenceModels]
-			return { id, info }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "roo": {
 			const id = getValidatedModelId(apiConfiguration.apiModelId, routerModels.roo, defaultModelId)
 			const info = routerModels.roo?.[id]
-			return { id, info }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		case "qwen-code": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
@@ -382,7 +391,7 @@ function getSelectedModel({
 				defaultModelId,
 			)
 			const info = routerModels["vercel-ai-gateway"]?.[id]
-			return { id, info }
+			return { id, info: getModelInfoWithCustomFallback(info, apiConfiguration.customModelInfo) }
 		}
 		// case "anthropic":
 		// case "human-relay":
