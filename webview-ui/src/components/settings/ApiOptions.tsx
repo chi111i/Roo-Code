@@ -133,6 +133,10 @@ import { BedrockCustomArn } from "./providers/BedrockCustomArn"
 import { RooBalanceDisplay } from "./providers/RooBalanceDisplay"
 import { buildDocLink } from "@src/utils/docLinks"
 
+// Constants for the model picker
+const SEARCH_CLEAR_DELAY_MS = 100
+const CUSTOM_ARN_VALUE = "custom-arn"
+
 export interface ApiOptionsProps {
 	uriScheme: string | undefined
 	apiConfiguration: ProviderSettings
@@ -786,7 +790,10 @@ const ApiOptions = ({
 									if (closeTimeoutRef.current) {
 										clearTimeout(closeTimeoutRef.current)
 									}
-									closeTimeoutRef.current = setTimeout(() => setModelSearchValue(""), 100)
+									closeTimeoutRef.current = setTimeout(
+										() => setModelSearchValue(""),
+										SEARCH_CLEAR_DELAY_MS,
+									)
 								}
 							}}>
 							<PopoverTrigger asChild>
@@ -797,7 +804,7 @@ const ApiOptions = ({
 									className="w-full justify-between"
 									data-testid="model-picker-button">
 									<div className="truncate">
-										{selectedModelId === "custom-arn"
+										{selectedModelId === CUSTOM_ARN_VALUE
 											? t("settings:labels.useCustomArn")
 											: (selectedModelId ?? t("settings:common.select"))}
 									</div>
@@ -844,7 +851,10 @@ const ApiOptions = ({
 														setApiConfigurationField("apiModelId", value)
 
 														// Clear custom ARN if not using custom ARN option.
-														if (value !== "custom-arn" && selectedProvider === "bedrock") {
+														if (
+															value !== CUSTOM_ARN_VALUE &&
+															selectedProvider === "bedrock"
+														) {
 															setApiConfigurationField("awsCustomArn", "")
 														}
 
@@ -859,7 +869,7 @@ const ApiOptions = ({
 														}
 														selectTimeoutRef.current = setTimeout(
 															() => setModelSearchValue(""),
-															100,
+															SEARCH_CLEAR_DELAY_MS,
 														)
 													}}
 													data-testid={`model-option-${option.value}`}>
@@ -878,7 +888,7 @@ const ApiOptions = ({
 											))}
 											{selectedProvider === "bedrock" && (
 												<CommandItem
-													value="custom-arn"
+													value={CUSTOM_ARN_VALUE}
 													onSelect={(value) => {
 														setApiConfigurationField("apiModelId", value)
 														setModelPickerOpen(false)
@@ -887,7 +897,7 @@ const ApiOptions = ({
 														}
 														selectTimeoutRef.current = setTimeout(
 															() => setModelSearchValue(""),
-															100,
+															SEARCH_CLEAR_DELAY_MS,
 														)
 													}}>
 													<span className="truncate">
@@ -896,7 +906,7 @@ const ApiOptions = ({
 													<Check
 														className={cn(
 															"size-4 p-0.5 ml-auto",
-															selectedModelId === "custom-arn"
+															selectedModelId === CUSTOM_ARN_VALUE
 																? "opacity-100"
 																: "opacity-0",
 														)}
@@ -907,7 +917,7 @@ const ApiOptions = ({
 									</CommandList>
 									{modelSearchValue &&
 										!selectedProviderModels.some((m) => m.value === modelSearchValue) &&
-										modelSearchValue !== "custom-arn" && (
+										modelSearchValue !== CUSTOM_ARN_VALUE && (
 											<div className="p-1 border-t border-vscode-input-border">
 												<CommandItem
 													data-testid="use-custom-model"
@@ -920,7 +930,7 @@ const ApiOptions = ({
 														}
 														selectTimeoutRef.current = setTimeout(
 															() => setModelSearchValue(""),
-															100,
+															SEARCH_CLEAR_DELAY_MS,
 														)
 													}}>
 													{t("settings:modelPicker.useCustomModel", {
@@ -939,7 +949,7 @@ const ApiOptions = ({
 						<ApiErrorMessage errorMessage={t("settings:validation.modelDeprecated")} />
 					)}
 
-					{selectedProvider === "bedrock" && selectedModelId === "custom-arn" && (
+					{selectedProvider === "bedrock" && selectedModelId === CUSTOM_ARN_VALUE && (
 						<BedrockCustomArn
 							apiConfiguration={apiConfiguration}
 							setApiConfigurationField={setApiConfigurationField}
