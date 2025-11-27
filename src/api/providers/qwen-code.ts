@@ -285,8 +285,29 @@ export class QwenCodeHandler extends BaseProvider implements SingleCompletionHan
 	}
 
 	override getModel(): { id: string; info: ModelInfo } {
-		const id = this.options.apiModelId ?? qwenCodeDefaultModelId
-		const info = qwenCodeModels[id as keyof typeof qwenCodeModels] || qwenCodeModels[qwenCodeDefaultModelId]
+		const modelId = this.options.apiModelId ?? qwenCodeDefaultModelId
+		const isKnownModel = modelId in qwenCodeModels
+		const id = modelId
+		let info: ModelInfo
+
+		if (isKnownModel) {
+			info = qwenCodeModels[modelId as keyof typeof qwenCodeModels]
+		} else if (this.options.customModelInfo) {
+			info = {
+				...this.options.customModelInfo,
+				contextWindow: this.options.customModelInfo.contextWindow || 128000,
+				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? false,
+			}
+		} else {
+			info = {
+				maxTokens: 8192,
+				contextWindow: 128000,
+				supportsPromptCache: false,
+				supportsImages: true,
+				supportsNativeTools: true,
+			}
+		}
+
 		return { id, info }
 	}
 

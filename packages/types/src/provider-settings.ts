@@ -187,6 +187,11 @@ const baseProviderSettingsSchema = z.object({
 
 	// Tool protocol override for this profile.
 	toolProtocol: z.enum(["xml", "native"]).optional(),
+
+	// Custom model configuration for static providers.
+	// When a user enters a custom model ID not in the predefined list,
+	// these fields allow them to specify the model's parameters.
+	customModelInfo: modelInfoSchema.nullish(),
 })
 
 // Several of the providers share common model config properties.

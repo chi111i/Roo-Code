@@ -913,6 +913,16 @@ export class AwsBedrockHandler extends BaseProvider implements SingleCompletionH
 				id: bedrockDefaultPromptRouterModelId,
 				info: JSON.parse(JSON.stringify(bedrockModels[bedrockDefaultPromptRouterModelId])),
 			}
+		} else if (this.options.customModelInfo) {
+			// Use custom model info provided by user for unknown models
+			model = {
+				id: modelId,
+				info: {
+					...this.options.customModelInfo,
+					contextWindow: this.options.customModelInfo.contextWindow || BEDROCK_DEFAULT_CONTEXT,
+					supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? true,
+				},
+			}
 		} else {
 			// Use heuristics for model info, then allow overrides from ProviderSettings
 			const guessed = this.guessModelInfoFromId(modelId)

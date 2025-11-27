@@ -12,6 +12,9 @@ import { ApiStream } from "../transform/stream"
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 
+// Default max tokens for custom models
+const DEFAULT_MAX_TOKENS = 8192
+
 // Type helper to handle thinking chunks from Mistral API
 // The SDK includes ThinkChunk but TypeScript has trouble with the discriminated union
 type ContentChunkWithThinking = {
@@ -81,7 +84,7 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 		} = {
 			model,
 			messages: [{ role: "system", content: systemPrompt }, ...convertToMistralMessages(messages)],
-			maxTokens: maxTokens ?? info.maxTokens,
+			maxTokens: maxTokens ?? info.maxTokens ?? DEFAULT_MAX_TOKENS,
 			temperature,
 		}
 
@@ -170,8 +173,31 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 	}
 
 	override getModel() {
-		const id = this.options.apiModelId ?? mistralDefaultModelId
-		const info = mistralModels[id as MistralModelId] ?? mistralModels[mistralDefaultModelId]
+		const modelId = this.options.apiModelId ?? mistralDefaultModelId
+
+		// Check if this is a known model or a custom model
+		const isKnownModel = modelId in mistralModels
+		const id = modelId
+		let info
+
+		if (isKnownModel) {
+			info = mistralModels[modelId as MistralModelId]
+		} else if (this.options.customModelInfo) {
+			info = {
+				...this.options.customModelInfo,
+				contextWindow: this.options.customModelInfo.contextWindow || 128000,
+				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? false,
+			}
+		} else {
+			// Custom model ID without customModelInfo - use sensible defaults
+			info = {
+				maxTokens: DEFAULT_MAX_TOKENS,
+				contextWindow: 128000,
+				supportsPromptCache: false,
+				supportsImages: true,
+				supportsNativeTools: true,
+			}
+		}
 
 		// @TODO: Move this to the `getModelParams` function.
 		const maxTokens = this.options.includeMaxTokens ? info.maxTokens : undefined

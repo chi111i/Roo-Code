@@ -271,8 +271,28 @@ export class MiniMaxHandler extends BaseProvider implements SingleCompletionHand
 
 	getModel() {
 		const modelId = this.options.apiModelId
-		const id = modelId && modelId in minimaxModels ? (modelId as MinimaxModelId) : minimaxDefaultModelId
-		const info = minimaxModels[id]
+		const isKnownModel = modelId && modelId in minimaxModels
+		const id = modelId || minimaxDefaultModelId
+		let info
+
+		if (isKnownModel) {
+			info = minimaxModels[id as MinimaxModelId]
+		} else if (this.options.customModelInfo) {
+			info = {
+				...this.options.customModelInfo,
+				contextWindow: this.options.customModelInfo.contextWindow || 128000,
+				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? false,
+			}
+		} else if (modelId) {
+			info = {
+				maxTokens: 16384,
+				contextWindow: 128000,
+				supportsPromptCache: false,
+				supportsImages: true,
+			}
+		} else {
+			info = minimaxModels[minimaxDefaultModelId]
+		}
 
 		const params = getModelParams({
 			format: "anthropic",

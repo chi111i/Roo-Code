@@ -865,6 +865,22 @@
 		"noMatchFound": "No match found",
 		"useCustomModel": "Use custom: {{modelId}}"
 	},
+	"customModelConfig": {
+		"title": "Custom Model Configuration",
+		"description": "Configure parameters for your custom model",
+		"maxTokens": "Max Output Tokens",
+		"maxTokensDescription": "Maximum number of tokens the model can output (e.g., 8192)",
+		"contextWindow": "Context Window",
+		"contextWindowDescription": "Maximum context window size in tokens (e.g., 128000)",
+		"supportsImages": "Supports Images",
+		"supportsImagesDescription": "Whether the model can process image inputs",
+		"supportsPromptCache": "Supports Prompt Caching",
+		"supportsPromptCacheDescription": "Whether the model supports prompt caching for cost reduction",
+		"inputPrice": "Input Price (per 1M tokens)",
+		"outputPrice": "Output Price (per 1M tokens)",
+		"supportsThinking": "Supports Thinking/Reasoning",
+		"supportsThinkingDescription": "Whether the model supports extended thinking or reasoning"
+	},
 	"footer": {
 		"telemetry": {
 			"label": "Allow anonymous error and usage reporting",

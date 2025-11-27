@@ -62,8 +62,31 @@ export class DoubaoHandler extends OpenAiHandler {
 	}
 
 	override getModel() {
-		const id = this.options.apiModelId ?? doubaoDefaultModelId
-		const info = doubaoModels[id as keyof typeof doubaoModels] || doubaoModels[doubaoDefaultModelId]
+		const modelId = this.options.apiModelId ?? doubaoDefaultModelId
+
+		// Check if this is a known model or a custom model
+		const isKnownModel = modelId in doubaoModels
+		const id = modelId
+		let info
+
+		if (isKnownModel) {
+			info = doubaoModels[modelId as keyof typeof doubaoModels]
+		} else if (this.options.customModelInfo) {
+			info = {
+				...this.options.customModelInfo,
+				contextWindow: this.options.customModelInfo.contextWindow || 128000,
+				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? true,
+			}
+		} else {
+			// Custom model ID without customModelInfo - use sensible defaults
+			info = {
+				maxTokens: 4096,
+				contextWindow: 128000,
+				supportsPromptCache: true,
+				supportsImages: true,
+			}
+		}
+
 		const params = getModelParams({ format: "openai", modelId: id, model: info, settings: this.options })
 		return { id, info, ...params }
 	}

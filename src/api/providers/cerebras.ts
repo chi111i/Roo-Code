@@ -1,6 +1,6 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 
-import { type CerebrasModelId, cerebrasDefaultModelId, cerebrasModels } from "@roo-code/types"
+import { type CerebrasModelId, type ModelInfo, cerebrasDefaultModelId, cerebrasModels } from "@roo-code/types"
 
 import type { ApiHandlerOptions } from "../../shared/api"
 import { calculateApiCostOpenAI } from "../../shared/cost"
@@ -97,13 +97,33 @@ export class CerebrasHandler extends BaseProvider implements SingleCompletionHan
 		}
 	}
 
-	getModel(): { id: CerebrasModelId; info: (typeof cerebrasModels)[CerebrasModelId] } {
-		const modelId = (this.options.apiModelId as CerebrasModelId) || this.defaultProviderModelId
+	getModel(): { id: string; info: ModelInfo } {
+		const modelId = this.options.apiModelId || this.defaultProviderModelId
 
-		return {
-			id: modelId,
-			info: this.providerModels[modelId],
+		// Check if this is a known model or a custom model
+		const isKnownModel = modelId in this.providerModels
+		const id = modelId
+		let info: ModelInfo
+
+		if (isKnownModel) {
+			info = this.providerModels[modelId as CerebrasModelId]
+		} else if (this.options.customModelInfo) {
+			info = {
+				...this.options.customModelInfo,
+				contextWindow: this.options.customModelInfo.contextWindow || 128000,
+				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? false,
+			}
+		} else {
+			// Custom model ID without customModelInfo - use sensible defaults
+			info = {
+				maxTokens: 8192,
+				contextWindow: 128000,
+				supportsPromptCache: false,
+				supportsImages: false,
+			}
 		}
+
+		return { id, info }
 	}
 
 	async *createMessage(
