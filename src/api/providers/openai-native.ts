@@ -1207,7 +1207,7 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 
 		// Check if this is a known model or a custom model
 		const isKnownModel = modelId && modelId in openAiNativeModels
-		let id: string = isKnownModel ? (modelId as OpenAiNativeModelId) : modelId || openAiNativeDefaultModelId
+		let id: string = modelId || openAiNativeDefaultModelId
 		let info: ModelInfo
 
 		if (isKnownModel) {
@@ -1221,8 +1221,17 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 				contextWindow: this.options.customModelInfo.contextWindow || 128000,
 				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? true,
 			}
+		} else if (modelId) {
+			// Custom model ID without customModelInfo - use sensible defaults
+			info = {
+				maxTokens: 16384,
+				contextWindow: 128000,
+				supportsPromptCache: true,
+				supportsImages: true,
+				supportsNativeTools: true,
+			}
 		} else {
-			// Fallback: use default model for unknown models
+			// No model ID provided - use default model
 			id = openAiNativeDefaultModelId
 			info = openAiNativeModels[id as OpenAiNativeModelId]
 		}

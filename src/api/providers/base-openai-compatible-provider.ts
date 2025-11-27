@@ -240,16 +240,28 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 
 		// Check if this is a known model or a custom model
 		const isKnownModel = modelId && modelId in this.providerModels
-		const id = isKnownModel ? (modelId as ModelName) : modelId || this.defaultProviderModelId
-		const info: ModelInfo = isKnownModel
-			? this.providerModels[id as ModelName]
-			: this.options.customModelInfo
-				? {
-						...this.options.customModelInfo,
-						contextWindow: this.options.customModelInfo.contextWindow || 128000,
-						supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? false,
-					}
-				: this.providerModels[this.defaultProviderModelId]
+		const id = modelId || this.defaultProviderModelId
+		let info: ModelInfo
+
+		if (isKnownModel) {
+			info = this.providerModels[id as ModelName]
+		} else if (this.options.customModelInfo) {
+			info = {
+				...this.options.customModelInfo,
+				contextWindow: this.options.customModelInfo.contextWindow || 128000,
+				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? false,
+			}
+		} else if (modelId) {
+			// Custom model ID without customModelInfo - use sensible defaults
+			info = {
+				maxTokens: 8192,
+				contextWindow: 128000,
+				supportsPromptCache: false,
+				supportsImages: true,
+			}
+		} else {
+			info = this.providerModels[this.defaultProviderModelId]
+		}
 
 		return { id, info }
 	}

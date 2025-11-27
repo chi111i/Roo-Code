@@ -12,6 +12,9 @@ import { ApiStream } from "../transform/stream"
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 
+// Default max tokens for custom models
+const DEFAULT_MAX_TOKENS = 8192
+
 // Type helper to handle thinking chunks from Mistral API
 // The SDK includes ThinkChunk but TypeScript has trouble with the discriminated union
 type ContentChunkWithThinking = {
@@ -81,7 +84,7 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 		} = {
 			model,
 			messages: [{ role: "system", content: systemPrompt }, ...convertToMistralMessages(messages)],
-			maxTokens: maxTokens ?? info.maxTokens ?? 8192,
+			maxTokens: maxTokens ?? info.maxTokens ?? DEFAULT_MAX_TOKENS,
 			temperature,
 		}
 

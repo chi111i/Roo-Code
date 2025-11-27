@@ -7,6 +7,9 @@ import type { ProviderSettings, ModelInfo } from "@roo-code/types"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@src/components/ui"
 
+// Default values for custom model configuration
+const DEFAULT_CONTEXT_WINDOW = 128000
+
 interface CustomModelConfigProps {
 	apiConfiguration: ProviderSettings
 	setApiConfigurationField: <K extends keyof ProviderSettings>(field: K, value: ProviderSettings[K]) => void
@@ -80,7 +83,7 @@ export const CustomModelConfig = ({
 					value={customModelInfo.contextWindow?.toString() || ""}
 					onInput={(e: any) => {
 						const value = parseInt(e.target.value, 10)
-						updateCustomModelInfo("contextWindow", isNaN(value) ? 128000 : value)
+						updateCustomModelInfo("contextWindow", isNaN(value) ? DEFAULT_CONTEXT_WINDOW : value)
 					}}
 					placeholder={t("settings:placeholders.numbers.contextWindow")}
 					className="w-full">

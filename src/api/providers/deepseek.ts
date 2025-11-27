@@ -25,15 +25,25 @@ export class DeepSeekHandler extends OpenAiHandler {
 		// Check if this is a known model or a custom model
 		const isKnownModel = modelId in deepSeekModels
 		const id = modelId
-		const info = isKnownModel
-			? deepSeekModels[modelId as keyof typeof deepSeekModels]
-			: this.options.customModelInfo
-				? {
-						...this.options.customModelInfo,
-						contextWindow: this.options.customModelInfo.contextWindow || 128000,
-						supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? true,
-					}
-				: deepSeekModels[deepSeekDefaultModelId]
+		let info
+
+		if (isKnownModel) {
+			info = deepSeekModels[modelId as keyof typeof deepSeekModels]
+		} else if (this.options.customModelInfo) {
+			info = {
+				...this.options.customModelInfo,
+				contextWindow: this.options.customModelInfo.contextWindow || 128000,
+				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? true,
+			}
+		} else {
+			// Custom model ID without customModelInfo - use sensible defaults
+			info = {
+				maxTokens: 8192,
+				contextWindow: 128000,
+				supportsPromptCache: true,
+				supportsImages: false,
+			}
+		}
 
 		const params = getModelParams({ format: "openai", modelId: id, model: info, settings: this.options })
 		return { id, info, ...params }

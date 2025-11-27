@@ -329,7 +329,7 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 
 		// Check if this is a known model or a custom model
 		const isKnownModel = modelId && modelId in geminiModels
-		let id: string = isKnownModel ? (modelId as GeminiModelId) : modelId || geminiDefaultModelId
+		let id: string = modelId || geminiDefaultModelId
 		let info: ModelInfo
 
 		if (isKnownModel) {
@@ -343,8 +343,17 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 				contextWindow: this.options.customModelInfo.contextWindow || 128000,
 				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? true,
 			}
+		} else if (modelId) {
+			// Custom model ID without customModelInfo - use sensible defaults
+			info = {
+				maxTokens: 8192,
+				contextWindow: 128000,
+				supportsPromptCache: true,
+				supportsImages: true,
+				supportsNativeTools: true,
+			}
 		} else {
-			// Fallback: use default model for unknown models
+			// No model ID provided - use default model
 			id = geminiDefaultModelId
 			info = geminiModels[id as GeminiModelId]
 		}

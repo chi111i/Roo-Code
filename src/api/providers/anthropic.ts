@@ -309,7 +309,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 
 		// Check if this is a known model or a custom model
 		const isKnownModel = modelId && modelId in anthropicModels
-		let id: string = isKnownModel ? (modelId as AnthropicModelId) : modelId || anthropicDefaultModelId
+		let id: string = modelId || anthropicDefaultModelId
 		let info: ModelInfo
 
 		if (isKnownModel) {
@@ -323,8 +323,17 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 				contextWindow: this.options.customModelInfo.contextWindow || 128000,
 				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? true,
 			}
+		} else if (modelId) {
+			// Custom model ID without customModelInfo - use sensible defaults
+			// This allows users to use a custom model ID even without configuring all parameters
+			info = {
+				maxTokens: ANTHROPIC_DEFAULT_MAX_TOKENS,
+				contextWindow: 128000,
+				supportsPromptCache: true,
+				supportsImages: true,
+			}
 		} else {
-			// Fallback: use default model for unknown models
+			// No model ID provided - use default model
 			id = anthropicDefaultModelId
 			info = anthropicModels[id as AnthropicModelId]
 		}
