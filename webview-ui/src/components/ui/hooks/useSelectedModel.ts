@@ -205,13 +205,13 @@ function getSelectedModel({
 		}
 		case "huggingface": {
 			const id = apiConfiguration.huggingFaceModelId ?? "meta-llama/Llama-3.3-70B-Instruct"
-			const info = {
+			const defaultInfo: ModelInfo = {
 				maxTokens: 8192,
 				contextWindow: 131072,
 				supportsImages: false,
 				supportsPromptCache: false,
 			}
-			return { id, info }
+			return { id, info: getModelInfoWithCustomFallback(defaultInfo, apiConfiguration.customModelInfo) }
 		}
 		case "chutes": {
 			const id = getValidatedModelId(apiConfiguration.apiModelId, routerModels.chutes, defaultModelId)
