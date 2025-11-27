@@ -131,6 +131,7 @@ import { RateLimitSecondsControl } from "./RateLimitSecondsControl"
 import { ConsecutiveMistakeLimitControl } from "./ConsecutiveMistakeLimitControl"
 import { BedrockCustomArn } from "./providers/BedrockCustomArn"
 import { RooBalanceDisplay } from "./providers/RooBalanceDisplay"
+import { CustomModelConfig } from "./CustomModelConfig"
 import { buildDocLink } from "@src/utils/docLinks"
 
 // Constants for the model picker
@@ -336,6 +337,18 @@ const ApiOptions = ({
 
 		return availableModels
 	}, [selectedProvider, organizationAllowList, selectedModelId])
+
+	// Check if the currently selected model is a custom one (not in the predefined list)
+	const isCustomModel = useMemo(() => {
+		if (!selectedModelId || selectedModelId === CUSTOM_ARN_VALUE) {
+			return false
+		}
+		const models = MODELS_BY_PROVIDER[selectedProvider]
+		if (!models) {
+			return false
+		}
+		return !(selectedModelId in models)
+	}, [selectedProvider, selectedModelId])
 
 	const onProviderChange = useCallback(
 		(value: ProviderName) => {
@@ -953,6 +966,15 @@ const ApiOptions = ({
 						<BedrockCustomArn
 							apiConfiguration={apiConfiguration}
 							setApiConfigurationField={setApiConfigurationField}
+						/>
+					)}
+
+					{/* Show custom model configuration when using a model not in the predefined list */}
+					{isCustomModel && (
+						<CustomModelConfig
+							apiConfiguration={apiConfiguration}
+							setApiConfigurationField={setApiConfigurationField}
+							isCustomModel={isCustomModel}
 						/>
 					)}
 

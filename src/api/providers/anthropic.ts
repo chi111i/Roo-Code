@@ -306,8 +306,28 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 
 	getModel() {
 		const modelId = this.options.apiModelId
-		let id = modelId && modelId in anthropicModels ? (modelId as AnthropicModelId) : anthropicDefaultModelId
-		let info: ModelInfo = anthropicModels[id]
+
+		// Check if this is a known model or a custom model
+		const isKnownModel = modelId && modelId in anthropicModels
+		let id: string = isKnownModel ? (modelId as AnthropicModelId) : modelId || anthropicDefaultModelId
+		let info: ModelInfo
+
+		if (isKnownModel) {
+			// Use predefined model info
+			info = anthropicModels[id as AnthropicModelId]
+		} else if (this.options.customModelInfo) {
+			// Use custom model info provided by user
+			info = {
+				...this.options.customModelInfo,
+				// Ensure required fields have defaults
+				contextWindow: this.options.customModelInfo.contextWindow || 128000,
+				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? true,
+			}
+		} else {
+			// Fallback: use default model for unknown models
+			id = anthropicDefaultModelId
+			info = anthropicModels[id as AnthropicModelId]
+		}
 
 		// If 1M context beta is enabled for Claude Sonnet 4 or 4.5, update the model info
 		if ((id === "claude-sonnet-4-20250514" || id === "claude-sonnet-4-5") && this.options.anthropicBeta1MContext) {

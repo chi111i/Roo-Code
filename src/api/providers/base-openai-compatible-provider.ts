@@ -236,11 +236,21 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 	}
 
 	override getModel() {
-		const id =
-			this.options.apiModelId && this.options.apiModelId in this.providerModels
-				? (this.options.apiModelId as ModelName)
-				: this.defaultProviderModelId
+		const modelId = this.options.apiModelId
 
-		return { id, info: this.providerModels[id] }
+		// Check if this is a known model or a custom model
+		const isKnownModel = modelId && modelId in this.providerModels
+		const id = isKnownModel ? (modelId as ModelName) : modelId || this.defaultProviderModelId
+		const info: ModelInfo = isKnownModel
+			? this.providerModels[id as ModelName]
+			: this.options.customModelInfo
+				? {
+						...this.options.customModelInfo,
+						contextWindow: this.options.customModelInfo.contextWindow || 128000,
+						supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? false,
+					}
+				: this.providerModels[this.defaultProviderModelId]
+
+		return { id, info }
 	}
 }

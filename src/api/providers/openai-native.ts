@@ -1205,10 +1205,27 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 	override getModel() {
 		const modelId = this.options.apiModelId
 
-		let id =
-			modelId && modelId in openAiNativeModels ? (modelId as OpenAiNativeModelId) : openAiNativeDefaultModelId
+		// Check if this is a known model or a custom model
+		const isKnownModel = modelId && modelId in openAiNativeModels
+		let id: string = isKnownModel ? (modelId as OpenAiNativeModelId) : modelId || openAiNativeDefaultModelId
+		let info: ModelInfo
 
-		const info: ModelInfo = openAiNativeModels[id]
+		if (isKnownModel) {
+			// Use predefined model info
+			info = openAiNativeModels[id as OpenAiNativeModelId]
+		} else if (this.options.customModelInfo) {
+			// Use custom model info provided by user
+			info = {
+				...this.options.customModelInfo,
+				// Ensure required fields have defaults
+				contextWindow: this.options.customModelInfo.contextWindow || 128000,
+				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? true,
+			}
+		} else {
+			// Fallback: use default model for unknown models
+			id = openAiNativeDefaultModelId
+			info = openAiNativeModels[id as OpenAiNativeModelId]
+		}
 
 		const params = getModelParams({
 			format: "openai",

@@ -35,12 +35,21 @@ export class XAIHandler extends BaseProvider implements SingleCompletionHandler 
 	}
 
 	override getModel() {
-		const id =
-			this.options.apiModelId && this.options.apiModelId in xaiModels
-				? (this.options.apiModelId as XAIModelId)
-				: xaiDefaultModelId
+		const modelId = this.options.apiModelId
 
-		const info = xaiModels[id]
+		// Check if this is a known model or a custom model
+		const isKnownModel = modelId && modelId in xaiModels
+		const id = isKnownModel ? (modelId as XAIModelId) : modelId || xaiDefaultModelId
+		const info = isKnownModel
+			? xaiModels[id as XAIModelId]
+			: this.options.customModelInfo
+				? {
+						...this.options.customModelInfo,
+						contextWindow: this.options.customModelInfo.contextWindow || 128000,
+						supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? true,
+					}
+				: xaiModels[xaiDefaultModelId]
+
 		const params = getModelParams({ format: "openai", modelId: id, model: info, settings: this.options })
 		return { id, info, ...params }
 	}

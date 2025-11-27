@@ -326,8 +326,28 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 
 	override getModel() {
 		const modelId = this.options.apiModelId
-		let id = modelId && modelId in geminiModels ? (modelId as GeminiModelId) : geminiDefaultModelId
-		let info: ModelInfo = geminiModels[id]
+
+		// Check if this is a known model or a custom model
+		const isKnownModel = modelId && modelId in geminiModels
+		let id: string = isKnownModel ? (modelId as GeminiModelId) : modelId || geminiDefaultModelId
+		let info: ModelInfo
+
+		if (isKnownModel) {
+			// Use predefined model info
+			info = geminiModels[id as GeminiModelId]
+		} else if (this.options.customModelInfo) {
+			// Use custom model info provided by user
+			info = {
+				...this.options.customModelInfo,
+				// Ensure required fields have defaults
+				contextWindow: this.options.customModelInfo.contextWindow || 128000,
+				supportsPromptCache: this.options.customModelInfo.supportsPromptCache ?? true,
+			}
+		} else {
+			// Fallback: use default model for unknown models
+			id = geminiDefaultModelId
+			info = geminiModels[id as GeminiModelId]
+		}
 
 		const params = getModelParams({
 			format: "gemini",
