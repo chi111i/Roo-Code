@@ -25,6 +25,7 @@ import { useEscapeKey } from "@src/hooks/useEscapeKey"
 
 import { ModelInfoView } from "./ModelInfoView"
 import { ApiErrorMessage } from "./ApiErrorMessage"
+import { CustomModelConfig } from "./CustomModelConfig"
 
 type ModelIdKey = keyof Pick<
 	ProviderSettings,
@@ -100,6 +101,15 @@ export const ModelPicker = ({
 
 		return Object.keys(availableModels).sort((a, b) => a.localeCompare(b))
 	}, [models, apiConfiguration.apiProvider, organizationAllowList, selectedModelId])
+
+	// Check if the currently selected model is a custom one (not in the available models list)
+	const isCustomModel = useMemo(() => {
+		if (!selectedModelId) {
+			return false
+		}
+		// A model is custom if it's not in the available models from the API
+		return !modelIds.includes(selectedModelId)
+	}, [selectedModelId, modelIds])
 
 	const [searchValue, setSearchValue] = useState("")
 
@@ -253,6 +263,14 @@ export const ModelPicker = ({
 					modelInfo={selectedModelInfo}
 					isDescriptionExpanded={isDescriptionExpanded}
 					setIsDescriptionExpanded={setIsDescriptionExpanded}
+				/>
+			)}
+			{/* Show custom model configuration when using a model not in the predefined list */}
+			{isCustomModel && (
+				<CustomModelConfig
+					apiConfiguration={apiConfiguration}
+					setApiConfigurationField={setApiConfigurationField}
+					isCustomModel={isCustomModel}
 				/>
 			)}
 			<div className="text-sm text-vscode-descriptionForeground">

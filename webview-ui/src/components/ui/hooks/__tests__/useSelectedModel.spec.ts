@@ -138,29 +138,17 @@ describe("useSelectedModel", () => {
 
 			const apiConfiguration: ProviderSettings = {
 				apiProvider: "openrouter",
-				openRouterModelId: "test-model", // This model doesn't exist in available models
+				openRouterModelId: "test-model", // This model doesn't exist in available models - but we now allow custom models
 				openRouterSpecificProvider: "test-provider",
 			}
 
 			const wrapper = createWrapper()
 			const { result } = renderHook(() => useSelectedModel(apiConfiguration), { wrapper })
 
-			// Should fall back to provider default since "test-model" doesn't exist
-			expect(result.current.id).toBe("anthropic/claude-sonnet-4.5")
-			// Should still use specific provider info for the default model if specified
-			expect(result.current.info).toEqual({
-				...{
-					maxTokens: 8192,
-					contextWindow: 200_000,
-					supportsImages: true,
-					supportsPromptCache: true,
-					inputPrice: 3.0,
-					outputPrice: 15.0,
-					cacheWritesPrice: 3.75,
-					cacheReadsPrice: 0.3,
-				},
-				...specificProviderInfo,
-			})
+			// Now we keep the configured model ID even if it doesn't exist (to support custom models)
+			expect(result.current.id).toBe("test-model")
+			// Should use specific provider info since the provider is specified
+			expect(result.current.info).toEqual(specificProviderInfo)
 		})
 
 		it("should demonstrate the merging behavior validates the comment about missing fields", () => {
@@ -310,19 +298,11 @@ describe("useSelectedModel", () => {
 			const wrapper = createWrapper()
 			const { result } = renderHook(() => useSelectedModel(apiConfiguration), { wrapper })
 
-			// Should fall back to provider default since "non-existent-model" doesn't exist
-			expect(result.current.id).toBe("anthropic/claude-sonnet-4.5")
-			// Should use base model info since provider doesn't exist
-			expect(result.current.info).toEqual({
-				maxTokens: 8192,
-				contextWindow: 200_000,
-				supportsImages: true,
-				supportsPromptCache: true,
-				inputPrice: 3.0,
-				outputPrice: 15.0,
-				cacheWritesPrice: 3.75,
-				cacheReadsPrice: 0.3,
-			})
+			// Now we keep the configured model ID even if it doesn't exist (to support custom models)
+			expect(result.current.id).toBe("non-existent-model")
+			// Should return undefined info since neither the model nor the provider exist in available models
+			// and no customModelInfo is provided
+			expect(result.current.info).toBeUndefined()
 		})
 	})
 
